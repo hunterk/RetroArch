@@ -1,0 +1,35 @@
+name: CI Android
+
+on:
+#  schedule:
+#    - cron: '0 2 * * *' # run at 2 AM UTC
+  watch: # this is a hack that lets repo owners trigger a build by starring
+    types: [started]
+    if: github.actor == github.event.repository.owner.login
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Compile RA
+      run: |
+        cd pkg/android/phoenix
+        ./gradlew assembleNormalRelease
+        find . -iname "*.apk" -exec ls -l "{}" \;
+   
+    - name: Create new release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: Android Stable
+        file: pkg/android/phoenix/build/outputs/apk/normal/release/phoenix-normal-release.apk
+        overwrite: true
